@@ -1,8 +1,8 @@
-import { asynchandler } from "../utils/asynchandler.js";
+import { asynchandler } from "../utils/asynchandler";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponce } from "../utils/ApiResponce.js"
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js"
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
@@ -73,8 +73,14 @@ const registeruser = asynchandler(async (req, res) => {
 
       const user = await User.create({
             fullname,
-            avatar: avatar.url,
-            coverimage: coverimage?.url || "",
+            avatar: {
+                  public_id:avatar.public_id,
+                  url:avatar.secure_url
+            },
+            coverimage:{
+                  public_id:coverimage?.public_id || "",
+                  url:coverimage?.secure_url || ""
+            } ,
             email,
             password,
             username: username.toLowerCase()
@@ -137,8 +143,8 @@ const logoutuser = asynchandler(async (req, res) => {
       await User.findByIdAndUpdate(
             req.user._id,
             {
-                  $set: {
-                        refreshToken: undefined
+                  $unset: {
+                        refreshToken: 1 //this remove the feild from document
                   }
             }, {
             new: true
@@ -154,6 +160,7 @@ const logoutuser = asynchandler(async (req, res) => {
 const refreshAccessToken = asynchandler(async (req, res) => {
       try {
             const incomingRefreshToken = req.cookie?.refreshToken || req.body.refreshToken;
+            // console.log(incomingRefreshToken);
             if (!incomingRefreshToken) {
                   throw new ApiError(401, "unauthorized req");
             }
@@ -204,18 +211,30 @@ const updateUserAvatar = asynchandler(async (req, res) => {
             throw new ApiError(400, "Error while uploding avatar on cloudinary")
       }
 
-      const user = User.findByIdAndUpdate(
+      const user = await User.findById(req.user._id).select("avatar");
+
+      const avatarToBeDelete = user.avatar.public_id;
+
+      const updatedUser = User.findByIdAndUpdate(
             req.user?._id,
             {
                   $set: {
-                        avatar: avatar.url
+                        avatar: {
+                              public_id: avatar.public_id,
+                              url: avatar.secure_url
+                        }
                   }
             }, {
             new: true
-      }).select("-password")
+      }
+      ).select("-password")
+
+      if(avatarToBeDelete && updatedUser.avatar.public_id){
+            await deleteOnCloudinary(avatarToBeDelete);
+      }
 
       return res.status(200)
-            .json(new ApiResponce(200, user, "Avatar uploaded SuccessFully"))
+            .json(new ApiResponce(200, updatedUser, "Avatar uploaded SuccessFully"))
 })
 
 const updateUserCoverImage = asynchandler(async (req, res) => {
@@ -231,18 +250,29 @@ const updateUserCoverImage = asynchandler(async (req, res) => {
             throw new ApiError(400, "Error while uploding avatar on cloudinary")
       }
 
-      const user = User.findByIdAndUpdate(
+      const user = await User.findById(req.user._id).select("coverimage")
+
+      const coverimageToBeDeleted=user.coverimage?.public_id;
+
+      const updatedUser = User.findByIdAndUpdate(
             req.user?._id,
             {
                   $set: {
-                        coverimage: coverimage.url
+                        coverimage:{
+                              public_id:coverimage.public_id,
+                              url:coverimage.secure_url
+                        }
                   }
             }, {
             new: true
       }).select("-password")
 
+      if(coverimageToBeDeleted && updateUser.coverimage.public_id){
+            await deleteOnCloudinary(coverimageToBeDeleted)
+      }
+
       return res.status(200)
-            .json(new ApiResponce(200, user, "Cover-Image uploaded SuccessFully"))
+            .json(new ApiResponce(200, updatedUser, "Cover-Image uploaded SuccessFully"))
 })
 
 const updateUserPassword = asynchandler(async (req, res) => {
@@ -329,7 +359,8 @@ const getUserChannelProfile = asynchandler(async (req, res) => {
                         SubscribedToCount: 1,
                         avatar: 1,
                         coverimage: 1,
-                        email: 1
+                        email: 1,
+                        isSubscribed: 1
                   }
             }
       ])
@@ -362,7 +393,7 @@ const getUserWatchHistory = asynchandler(async (req, res) => {
                         from: "videos",
                         localField: "watchhistory",
                         foreignField: "_id",
-                        as: "watchhHistory",
+                        as: "watchhistory",
                         pipeline: [
                               {
                                     $lookup: {

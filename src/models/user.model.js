@@ -21,11 +21,17 @@ const userSchema = new mongoose.Schema({
             lowercase: true
       },
       avatar: {
-            type: String,
-            required: true,
+            type:{
+                  public_id:String,
+                  url:String
+            },
+            required:true
       },
       coverimage: {
-            type: String,
+            type:{
+                  public_id:String,
+                  url:String
+            }
       },
       watchhistory: [
             {
