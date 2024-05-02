@@ -19,9 +19,27 @@ const uploadOnCloudinary = async (localfilepath) => {
                   resource_type: "auto"
             });
 
-            //file has been uploaded successfully
+            /* responce: {
+           public_id: 'sample_video',
+           version: 1312461204,
+           signature: 'abcdefgc024acceb1c1baa1f8d4a3e5e8b9ee7c2',
+           width: 1280,
+           height: 720,
+           format: 'mp4',
+           resource_type: 'video',
+           duration: 63.27,
+           created_at: '2011-08-04T20:55:32Z',
+           bytes: 120253456,
+           type: 'upload',
+           etag: 'd3ca7b74e838e74f3f34cd',
+           url: 'http://res.cloudinary.com/demo/video/upload/v1312461204/sample_video.mp4',
+           secure_url: 'https://res.cloudinary.com/demo/video/upload/v1312461204/sample_video.mp4',
+           ...
+                 } */
+
             // maybe--> console.log("File is Uploaded On Cloudinary : )",responce.url);
-            fs.unlinkSync(localfilepath);
+
+            fs.unlinkSync(localfilepath); // delete file from public/temp
             return responce;
 
       } catch (error) {
@@ -33,14 +51,11 @@ const uploadOnCloudinary = async (localfilepath) => {
 const deleteOnCloudinary = async (public_id, resource_type = "image") => {
       try {
             if (!public_id) return null;
-
-            //delete file from cloudinary
             const result = await cloudinary.uploader.destroy(public_id, {
                   resource_type: `${resource_type}`
             });
       } catch (error) {
             return null;
-            // console.log("delete on cloudinary failed", error);
       }
 };
 

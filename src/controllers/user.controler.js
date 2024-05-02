@@ -14,7 +14,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 
             user.refreshToken = refreshToken;
 
-            //for only update in refreshtoken not all feilds in user
+            //for only update in refreshtoken , not all feilds in user
             await user.save({ validateBeforeSave: false });
 
             return { accessToken, refreshToken };
@@ -120,6 +120,7 @@ const loginuser = asynchandler(async (req, res) => {
 
       const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
+      //its have a new set of Access and Refresh Token irrespective of user
       const loggeduser = await User.findById(user._id).select("-password -refreshToken")
 
       return res.status(200)
