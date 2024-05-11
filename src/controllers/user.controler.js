@@ -1,4 +1,4 @@
-import { asynchandler } from "../utils/asynchandler";
+import { asynchandler } from "../utils/asynchandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponce } from "../utils/ApiResponce.js"
 import { User } from "../models/user.model.js";
@@ -329,14 +329,16 @@ const getUserChannelProfile = asynchandler(async (req, res) => {
                         foreignField: "channel",
                         as: "subscribers"
                   }
-            }, {
+            }, 
+            {
                   $lookup: {
                         from: "subscriptions",
                         localField: "_id",
                         foreignField: "subscriber",
                         as: "subscribedTo"
                   }
-            }, {
+            }, 
+            {
                   $addFields: {
                         subscribersCount: {
                               $size: "$subscribers"

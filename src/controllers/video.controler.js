@@ -76,7 +76,12 @@ const getAllVideos = asynchandler(async (req, res) => {
                         fullname: 1,
                         avatar: 1,
                         username: 1
-                  }
+                  },
+                  thumbnail:1,
+                  title:1,
+                  description:1,
+                  duration:1,
+                  views:1
             }
       })
 
